@@ -36,6 +36,7 @@ public class RealmFilesActivity extends AppCompatActivity {
         mIgnoreExtensionList = new ArrayList<>();
         mIgnoreExtensionList.add(".log");
         mIgnoreExtensionList.add(".lock");
+        mIgnoreExtensionList.add(".management");
 
         File dataDir = new File(getApplicationInfo().dataDir, "files");
         File[] files = dataDir.listFiles();

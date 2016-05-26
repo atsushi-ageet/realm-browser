@@ -20,7 +20,7 @@ import com.dd.realmbrowser.utils.MagicUtils;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmList;
-import io.realm.RealmObject;
+import io.realm.RealmModel;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -33,11 +33,12 @@ import java.util.List;
 
 public class RealmBrowserActivity extends AppCompatActivity implements RealmAdapter.Listener {
 
-    private static final String EXTRAS_REALM_FILE_NAME = "EXTRAS_REALM_FILE_NAME";
+    private static final String EXTRAS_REALM_CONF_HASH = "EXTRAS_REALM_CONF_HASH";
     private static final String EXTRAS_REALM_MODEL_INDEX = "REALM_MODEL_INDEX";
 
+    private RealmConfiguration mRealmConf;
     private Realm mRealm;
-    private Class<? extends RealmObject> mRealmObjectClass;
+    private Class<? extends RealmModel> mRealmObjectClass;
     private RealmAdapter mAdapter;
     private TextView mTxtIndex;
     private TextView mTxtColumn1;
@@ -47,16 +48,16 @@ public class RealmBrowserActivity extends AppCompatActivity implements RealmAdap
     private List<Field> mSelectedFieldList;
     private List<Field> mFieldsList;
 
-    public static void start(Activity activity, int realmModelIndex, String realmFileName) {
+    public static void start(Activity activity, int realmModelIndex, RealmConfiguration realmConf) {
         Intent intent = new Intent(activity, RealmBrowserActivity.class);
         intent.putExtra(EXTRAS_REALM_MODEL_INDEX, realmModelIndex);
-        intent.putExtra(EXTRAS_REALM_FILE_NAME, realmFileName);
+        intent.putExtra(EXTRAS_REALM_CONF_HASH, realmConf.hashCode());
         activity.startActivity(intent);
     }
 
-    public static void start(Activity activity, String realmFileName) {
+    public static void start(Activity activity, RealmConfiguration realmConf) {
         Intent intent = new Intent(activity, RealmBrowserActivity.class);
-        intent.putExtra(EXTRAS_REALM_FILE_NAME, realmFileName);
+        intent.putExtra(EXTRAS_REALM_CONF_HASH, realmConf.hashCode());
         activity.startActivity(intent);
     }
 
@@ -65,28 +66,25 @@ public class RealmBrowserActivity extends AppCompatActivity implements RealmAdap
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ac_realm_browser);
 
-        String realmFileName = getIntent().getStringExtra(EXTRAS_REALM_FILE_NAME);
+        int realmConfHash = getIntent().getIntExtra(EXTRAS_REALM_CONF_HASH, 0);
+        mRealmConf = RealmBrowser.getInstance().findRealmConfByHashCode(realmConfHash);
+        mRealm = Realm.getInstance(mRealmConf);
 
-        RealmConfiguration config = new RealmConfiguration.Builder(this)
-                .name(realmFileName)
-                .build();
-        mRealm = Realm.getInstance(config);
-
-        AbstractList<? extends RealmObject> realmObjects;
+        AbstractList<? extends RealmModel> realmObjects;
 
         if(getIntent().getExtras().containsKey(EXTRAS_REALM_MODEL_INDEX)) {
             int index = getIntent().getIntExtra(EXTRAS_REALM_MODEL_INDEX, 0);
-            mRealmObjectClass = RealmBrowser.getInstance().getRealmModelList().get(index);
+            mRealmObjectClass = new ArrayList<>(mRealmConf.getRealmObjectClasses()).get(index);
             realmObjects = mRealm.where(mRealmObjectClass).findAll();
         } else {
-            RealmObject object = RealmHolder.getInstance().getObject();
+            RealmModel object = RealmHolder.getInstance().getObject();
             Field field = RealmHolder.getInstance().getField();
             String methodName = MagicUtils.createMethodName(field);
             realmObjects = invokeMethod(object, methodName);
             if(MagicUtils.isParameterizedField(field)) {
                 ParameterizedType pType = (ParameterizedType) field.getGenericType();
                 Class<?> pTypeClass = (Class<?>) pType.getActualTypeArguments()[0];
-                mRealmObjectClass = (Class<? extends RealmObject>) pTypeClass;
+                mRealmObjectClass = (Class<? extends RealmModel>) pTypeClass;
             }
         }
 
@@ -144,19 +142,18 @@ public class RealmBrowserActivity extends AppCompatActivity implements RealmAdap
     }
 
     @Override
-    public void onRowItemClicked(@NonNull RealmObject realmObject, @NonNull Field field) {
+    public void onRowItemClicked(@NonNull RealmModel realmObject, @NonNull Field field) {
         RealmHolder.getInstance().setObject(realmObject);
         RealmHolder.getInstance().setField(field);
-        String realmFileName = getIntent().getStringExtra(EXTRAS_REALM_FILE_NAME);
-        RealmBrowserActivity.start(this, realmFileName);
+        RealmBrowserActivity.start(this, mRealmConf);
     }
 
     @Nullable
-    public static RealmList<? extends RealmObject> invokeMethod(Object realmObject, String methodName) {
-        RealmList<? extends RealmObject> result = null;
+    public static RealmList<? extends RealmModel> invokeMethod(Object realmObject, String methodName) {
+        RealmList<? extends RealmModel> result = null;
         try {
             Method method = realmObject.getClass().getMethod(methodName);
-            result = (RealmList<? extends RealmObject>) method.invoke(realmObject);
+            result = (RealmList<? extends RealmModel>) method.invoke(realmObject);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             L.e(e.toString());
         }

@@ -10,25 +10,26 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.dd.realmbrowser.model.RealmPreferences;
 import com.dd.realmbrowser.utils.MagicUtils;
-import io.realm.RealmObject;
 
 import java.lang.reflect.Field;
 import java.util.AbstractList;
 import java.util.List;
 
+import io.realm.RealmModel;
+
 class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ViewHolder> {
 
     public interface Listener {
-        void onRowItemClicked(@NonNull RealmObject realmObject, @NonNull Field field);
+        void onRowItemClicked(@NonNull RealmModel realmObject, @NonNull Field field);
     }
 
-    private AbstractList<? extends RealmObject> mRealmObjects;
+    private AbstractList<? extends RealmModel> mRealmObjects;
     private Context mContext;
     private List<Field> mFieldList;
     private Listener mListener;
     private RealmPreferences mRealmPreferences;
 
-    public RealmAdapter(@NonNull Context context, @NonNull AbstractList<? extends RealmObject> realmObjects,
+    public RealmAdapter(@NonNull Context context, @NonNull AbstractList<? extends RealmModel> realmObjects,
                         @NonNull List<Field> fieldList, @NonNull Listener listener) {
         mRealmPreferences = new RealmPreferences(context);
         mContext = context;
@@ -68,7 +69,7 @@ class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ViewHolder> {
         } else {
             holder.txtIndex.setText(String.valueOf(position));
 
-            RealmObject realmObject = mRealmObjects.get(position);
+            RealmModel realmObject = mRealmObjects.get(position);
             initRowWeight(holder);
             initRowTextWrapping(holder);
 
@@ -114,7 +115,7 @@ class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ViewHolder> {
         holder.txtColumn3.setLayoutParams(layoutParams3);
     }
 
-    private void initRowText(TextView txtColumn, RealmObject realmObject, Field field) {
+    private void initRowText(TextView txtColumn, RealmModel realmObject, Field field) {
         if (MagicUtils.isParameterizedField(field)) {
             txtColumn.setText(MagicUtils.createParameterizedName(field));
             txtColumn.setOnClickListener(createClickListener(realmObject, field));
@@ -132,7 +133,7 @@ class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ViewHolder> {
         }
     };
 
-    private View.OnClickListener createClickListener(@NonNull final RealmObject realmObject, @NonNull final Field field) {
+    private View.OnClickListener createClickListener(@NonNull final RealmModel realmObject, @NonNull final Field field) {
         return new View.OnClickListener() {
             @Override
             public void onClick(View v) {

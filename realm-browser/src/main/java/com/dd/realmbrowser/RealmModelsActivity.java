@@ -9,18 +9,22 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import io.realm.RealmObject;
+
+import io.realm.RealmConfiguration;
+import io.realm.RealmModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RealmModelsActivity extends AppCompatActivity {
 
-    private static final String EXTRAS_REALM_FILE_NAME = "EXTRAS_REALM_FILE_NAME";
+    private static final String EXTRAS_REALM_CONF_HASH = "EXTRAS_REALM_CONF_HASH";
 
-    public static void start(@NonNull Activity activity, @NonNull String realmFileName) {
+    private RealmConfiguration mRealmConf;
+
+    public static void start(@NonNull Activity activity, @NonNull RealmConfiguration realmConf) {
         Intent intent = new Intent(activity, RealmModelsActivity.class);
-        intent.putExtra(EXTRAS_REALM_FILE_NAME, realmFileName);
+        intent.putExtra(EXTRAS_REALM_CONF_HASH, realmConf.hashCode());
         activity.startActivity(intent);
     }
 
@@ -29,9 +33,12 @@ public class RealmModelsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ac_realm_list_view);
 
+        int realmConfHash = getIntent().getIntExtra(EXTRAS_REALM_CONF_HASH, 0);
+        mRealmConf = RealmBrowser.getInstance().findRealmConfByHashCode(realmConfHash);
+
         List<String> modelList = new ArrayList<>();
-        for (Class<? extends RealmObject> file : RealmBrowser.getInstance().getRealmModelList()) {
-            modelList.add(file.getSimpleName());
+        for ( Class<? extends RealmModel> realmObject : mRealmConf.getRealmObjectClasses() ) {
+            modelList.add(realmObject.getSimpleName());
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, modelList);
@@ -46,7 +53,6 @@ public class RealmModelsActivity extends AppCompatActivity {
     }
 
     private void onItemClicked(int position) {
-        String realmFileName = getIntent().getStringExtra(EXTRAS_REALM_FILE_NAME);
-        RealmBrowserActivity.start(this, position, realmFileName);
+        RealmBrowserActivity.start(this, position, mRealmConf);
     }
 }

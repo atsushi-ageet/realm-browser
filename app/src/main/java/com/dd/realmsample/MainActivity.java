@@ -19,6 +19,7 @@ import java.util.List;
 public class MainActivity extends Activity implements View.OnClickListener {
 
     public static final String REALM_FILE_NAME = "db10";
+    private RealmConfiguration mRealmConf;
     private TextView mTxtTitle;
 
     @Override
@@ -26,8 +27,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RealmBrowser.getInstance().addRealmModel(User.class, Address.class,
-                RealmString.class, Contact.class);
+
+        mRealmConf = new RealmConfiguration.Builder(this)
+                .name(REALM_FILE_NAME)
+                .build();
+        RealmBrowser.getInstance().addRealmConf(mRealmConf);
 
         mTxtTitle = (TextView) findViewById(R.id.txtTitle);
         findViewById(R.id.btnInsert).setOnClickListener(this);
@@ -61,20 +65,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void updateTitle() {
-        RealmConfiguration config = new RealmConfiguration.Builder(this)
-                .name(REALM_FILE_NAME)
-                .build();
-        Realm realm = Realm.getInstance(config);
+        Realm realm = Realm.getInstance(mRealmConf);
         long size = realm.where(User.class).count();
         mTxtTitle.setText(String.format("Items in database: %d", size));
         realm.close();
     }
 
     private void removeAllUsers() {
-        RealmConfiguration config = new RealmConfiguration.Builder(this)
-                .name(REALM_FILE_NAME)
-                .build();
-        Realm realm = Realm.getInstance(config);
+        Realm realm = Realm.getInstance(mRealmConf);
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -87,10 +85,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void insertUsers(int count) {
-        RealmConfiguration config = new RealmConfiguration.Builder(this)
-                .name(REALM_FILE_NAME)
-                .build();
-        Realm realm = Realm.getInstance(config);
+        Realm realm = Realm.getInstance(mRealmConf);
 
         final List<User> userList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
@@ -137,7 +132,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void startRealmModelsActivity() {
-        RealmBrowser.startRealmModelsActivity(this, REALM_FILE_NAME);
+        RealmBrowser.startRealmModelsActivity(this, mRealmConf);
     }
 
 }

@@ -10,7 +10,7 @@ The lib is available on JitPack
 
 ```
 dependencies {
-    compile 'com.github.atsushi-ageet:realm-browser:0.0.5'
+    compile 'com.github.atsushi-ageet:realm-browser:0.0.6'
 }
 ```
 

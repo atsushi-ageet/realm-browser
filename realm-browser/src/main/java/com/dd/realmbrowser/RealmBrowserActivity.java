@@ -154,7 +154,11 @@ public class RealmBrowserActivity extends AppCompatActivity implements RealmAdap
         try {
             Method method = realmObject.getClass().getMethod(methodName);
             result = (RealmList<? extends RealmModel>) method.invoke(realmObject);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        } catch (NoSuchMethodException e) {
+            L.e(e.toString());
+        } catch (IllegalAccessException e) {
+            L.e(e.toString());
+        } catch (InvocationTargetException e) {
             L.e(e.toString());
         }
         return result;

@@ -27,8 +27,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        mRealmConf = new RealmConfiguration.Builder(this)
+        mRealmConf = new RealmConfiguration.Builder()
                 .name(REALM_FILE_NAME)
                 .build();
         RealmBrowser.getInstance().addRealmConf(mRealmConf);
